@@ -1,0 +1,124 @@
+===============================================================================
+PUF-02: FWL NEGATION SENTIMENT ANALYSIS
+===============================================================================
+
+OVERVIEW:
+---------
+This implementation uses Fixed Window Length (FWL) approach for negation scope
+detection in Indonesian sentiment analysis using BiLSTM architecture.
+
+DATASET:
+--------
+- PRDECT-ID only (5400 records)
+  - Train: 3780 records
+  - Validation: 810 records
+  - Test: 810 records
+
+NEGATION APPROACH:
+------------------
+FWL (Fixed Window Length) - Baseline Method 5
+- Window size: 2 words
+- Marks negation cue word with value 1
+- Marks next 2 words after cue with value 2
+- All other words marked with value 0
+
+Example:
+  Text: "tidak bagus sekali"
+  Vector: [1, 2, 2]
+  - "tidak" = negation cue (1)
+  - "bagus" = in scope (2)
+  - "sekali" = in scope (2)
+
+ARCHITECTURE:
+-------------
+1. Word Embedding Layer (trained Word2Vec, 200 dimensions)
+2. Negation Embedding Layer (16 dimensions)
+3. Concatenation of embeddings
+4. BiLSTM Layer 1 (128 units)
+5. BiLSTM Layer 2 (128 units)
+6. Conv1D (100 filters, kernel=5)
+7. GlobalMaxPooling
+8. Dense (16 units, ReLU)
+9. Output (1 unit, Sigmoid)
+
+HYPERPARAMETERS:
+----------------
+MAX_SEQUENCE_LENGTH: 185
+BATCH_SIZE: 32
+EPOCHS: 20 (with early stopping, patience=5)
+EMBEDDING_DIMENSIONS: 200
+NEGATION_EMBEDDING_DIMENSIONS: 16
+LSTM_UNITS: 128
+DROPOUT_RATE: 0.5
+INITIAL_LEARNING_RATE: 3e-4
+FINAL_LEARNING_RATE: 3e-6
+L2_REGULARIZATION: 1e-4
+
+FILES:
+------
+main_bilstm_fwl.py              - Main training script
+NegationHandlingBaseline.py     - FWL negation implementation
+verify_setup.py                 - Setup verification tool
+README.md                       - Full documentation
+
+data/dataset/partitioned/
+  ├── train-prdct-id.csv
+  ├── val-prdct-id.csv
+  └── test-prdct-id.csv
+
+models/ (generated during training)
+  ├── word2vec_custom.model
+  ├── fwl_negation_best.h5
+  └── fwl_negation_final.h5
+
+results/ (generated during training)
+  ├── fwl_negation_results.pkl
+  ├── fwl_negation_misclassified.csv
+  ├── fwl_negation_history.png
+  └── logs/
+
+USAGE:
+------
+1. Verify setup:
+   python verify_setup.py
+
+2. Train model:
+   python main_bilstm_fwl.py
+
+EXPECTED OUTPUT:
+----------------
+- Classification report (precision, recall, F1 for each class)
+- Confusion matrix
+- Overall accuracy
+- Training/validation curves
+- Misclassified examples for error analysis
+
+RUNTIME:
+--------
+- Word2Vec training: ~2-5 minutes
+- Model training: ~15-30 minutes (with early stopping)
+- Total: ~20-35 minutes (GPU), 40-70 minutes (CPU)
+
+CHANGES FROM ORIGINAL:
+----------------------
+Original (novel/rev6/main_bilstm_all.py):
+- Multiple datasets (5 options)
+- Multiple negation approaches (1 novel + 6 baselines)
+- Complex comparison system
+
+PUF-02:
+- Single dataset (PRDECT-ID)
+- Single negation approach (FWL only)
+- Simplified, focused implementation
+- Removed novel approach (not used)
+- Removed comparison table (only 1 model)
+
+EXTERNAL DEPENDENCIES:
+----------------------
+- ../resources/taggers/example-universal-pos/best-model.pt
+  (Flair POS tagger for Indonesian)
+
+===============================================================================
+Created: 2025-10-08
+Status: Ready for training
+===============================================================================

@@ -1,0 +1,194 @@
+===============================================================================
+PUF-02: VECTOR-LEVEL vs WORD-LEVEL NEGATION AUGMENTATION COMPARISON
+===============================================================================
+
+RESEARCH QUESTION:
+------------------
+Which level of negation feature augmentation is more effective for sentiment
+analysis: vector-level (separate embedding) or word-level (NOT_ tagging)?
+
+TWO APPROACHES:
+---------------
+
+1. VECTOR-LEVEL AUGMENTATION (Current Standard)
+   - Negation as separate 16-dim embedding
+   - Concatenated with 200-dim word embedding
+   - Total: 216-dim input to BiLSTM
+   - Dual input: [word_input, negation_input]
+
+   Example:
+   Text: "saya tidak suka makan nasi"
+   Word indices: [123, 456, 789, 234, 567]
+   Negation vector: [0, 1, 2, 2, 0]
+   Both fed to model separately
+
+2. WORD-LEVEL AUGMENTATION (Novel Experiment)
+   - Negation via NOT_ prefix on tokens
+   - Single 200-dim word embedding
+   - NOT_word = -word_embedding (semantic inverse)
+   - Single input: [word_input]
+
+   Example:
+   Text: "saya tidak suka makan nasi"
+   Tagged: "saya tidak NOT_suka NOT_makan nasi"
+   Word indices: [123, 456, 9999, 8888, 567]
+   Only word indices fed to model
+
+NEGATION SCOPE DETECTION:
+--------------------------
+Both use FWL (Fixed Window Length) with window=2:
+- Marks negation cue (value 1)
+- Marks next 2 words after cue as negated (value 2)
+- Other words unmarked (value 0)
+
+For WORD-LEVEL: Only tokens with value 2 get NOT_ prefix
+
+ARCHITECTURE COMPARISON:
+------------------------
+
+Vector-Level:
+Input -> [Word Embedding(200) + Negation Embedding(16)] = 216 dim
+      -> BiLSTM(128) -> BiLSTM(128) -> Conv1D(100,5) -> Dense(16) -> Output
+
+Word-Level:
+Input -> Word Embedding(200, includes NOT_ words)
+      -> BiLSTM(128) -> BiLSTM(128) -> Conv1D(100,5) -> Dense(16) -> Output
+
+Same BiLSTM/Conv1D architecture = Fair comparison!
+
+COMPARISON METRICS:
+-------------------
+
+Performance:
+✓ Accuracy
+✓ Precision (class 0 & 1)
+✓ Recall (class 0 & 1)
+✓ F1 Score (class 0 & 1)
+
+Efficiency:
+✓ Training Time
+✓ Inference Time
+✓ Model Parameters
+✓ Vocabulary Size
+
+USAGE:
+------
+
+1. Train Both Models (Default):
+   python main_bilstm_fwl.py
+
+   This will:
+   - Train vector-level model (~20-30 min)
+   - Train word-level model (~15-25 min)
+   - Display comparison table
+   - Save results/comparison_vector_vs_word.csv
+
+2. Train Single Model:
+   Edit main_bilstm_fwl.py:
+   TRAIN_BOTH = False
+   USE_WORD_LEVEL = True/False
+
+   Then run: python main_bilstm_fwl.py
+
+EXPECTED OUTPUTS:
+-----------------
+
+Terminal Output:
+- Vector-level training progress
+- Word-level training progress
+- Comparison table with all metrics
+- Vocabulary statistics
+
+Files Generated:
+models/
+├── fwl_vector_level_best.h5
+├── fwl_vector_level_final.h5
+├── fwl_word_level_best.h5
+├── fwl_word_level_final.h5
+└── word2vec_custom.model
+
+results/
+├── fwl_vector_level_history.png
+├── fwl_vector_level_results.pkl
+├── fwl_vector_level_misclassified.csv
+├── fwl_word_level_history.png
+├── fwl_word_level_results.pkl
+├── fwl_word_level_misclassified.csv
+├── comparison_vector_vs_word.csv
+└── logs/
+    ├── fwl_vector_level/
+    └── fwl_word_level/
+
+HYPOTHESES:
+-----------
+
+Vector-Level May Win Because:
+✓ Explicit negation representation
+✓ Can learn complex negation patterns
+✓ Separates negation from word semantics
+
+Word-Level May Win Because:
+✓ Simpler, more constrained model
+✓ Semantic inverse (NOT_good ≈ -good)
+✓ Less prone to overfitting
+✓ More interpretable
+
+Efficiency Expectations:
+✓ Word-level should train faster (fewer parameters)
+✓ Word-level should infer faster (single input)
+✓ Vector-level needs more memory (216 vs 200 dim)
+
+ANALYSIS TIPS:
+--------------
+
+1. Check accuracy difference:
+   - If < 1%, efficiency matters more
+   - If > 2%, performance matters more
+
+2. Look at training curves:
+   - Does word-level converge faster?
+   - Does vector-level overfit more?
+
+3. Check misclassified examples:
+   - Are errors different between approaches?
+   - Does one handle negation better?
+
+4. Vocabulary analysis:
+   - How many NOT_ words added?
+   - What percentage actually used?
+
+5. Time vs accuracy trade-off:
+   - Is extra training time worth the gain?
+   - For production: speed or accuracy?
+
+DATASET INFO:
+-------------
+PRDECT-ID: 5400 Indonesian product reviews
+- Train: 3780 samples
+- Validation: 810 samples
+- Test: 810 samples
+- Binary sentiment (0=negative, 1=positive)
+
+CONFIGURATION:
+--------------
+MAX_SEQUENCE_LENGTH: 185
+BATCH_SIZE: 32
+EPOCHS: 20 (early stopping patience=5)
+EMBEDDING_DIMENSIONS: 200
+NEGATION_EMBEDDING_DIMENSIONS: 16 (vector-level only)
+LSTM_UNITS: 128
+DROPOUT_RATE: 0.5
+
+RESEARCH CONTEXT:
+-----------------
+This is a "side research" experiment to understand feature augmentation
+strategies. Results can inform:
+- Future negation handling approaches
+- Feature engineering decisions
+- Trade-offs in model design
+- Deployment considerations (speed vs accuracy)
+
+===============================================================================
+Created: 2025-10-08
+Ready for experimentation!
+===============================================================================
