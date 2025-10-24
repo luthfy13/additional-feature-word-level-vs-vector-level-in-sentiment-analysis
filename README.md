@@ -23,7 +23,7 @@ This folder contains an implementation comparing two approaches for incorporatin
 ```
 Word Embedding (200 dim) ─┐
                           ├─ Concat (216 dim) ─> BiLSTM ─> Conv1D ─> Output
-Negation Embedding (16) ─┘
+Negation Embedding (16)  ─┘
 ```
 
 ### 2. Word-Level Augmentation (Novel Experiment)
@@ -225,3 +225,4 @@ This implementation serves as a "side research" to investigate:
 - Word-level approach offers better interpretability with higher accuracy
 
 Results suggest that word-level negation handling (NOT_ prefix) is a promising alternative to traditional vector-level augmentation for sentiment analysis tasks.
+
