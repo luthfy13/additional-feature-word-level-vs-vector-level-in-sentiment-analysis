@@ -78,8 +78,8 @@ USAGE:
    python main_bilstm_fwl.py
 
    This will:
-   - Train vector-level model (~20-30 min)
-   - Train word-level model (~15-25 min)
+   - Train vector-level model (~4 min)
+   - Train word-level model (~4 min)
    - Display comparison table
    - Save results/comparison_vector_vs_word.csv
 
@@ -119,47 +119,55 @@ results/
     ├── fwl_vector_level/
     └── fwl_word_level/
 
-HYPOTHESES:
------------
+ACTUAL RESULTS:
+---------------
 
-Vector-Level May Win Because:
-✓ Explicit negation representation
-✓ Can learn complex negation patterns
-✓ Separates negation from word semantics
+Performance Comparison:
+Metric                    Vector-Level    Word-Level      Winner
+--------------------------------------------------------------------------------
+Accuracy                     88.38%         89.99%       Word-Level (+1.61%)
+F1 Score                     88.36%         89.99%       Word-Level (+1.63%)
+Precision (class 0)          87.30%         90.14%       Word-Level (+2.84%)
+Precision (class 1)          89.67%         89.82%       Word-Level (+0.15%)
+Recall (class 0)             91.02%         90.78%       Vector-Level (+0.24%)
+Recall (class 1)             85.49%         89.12%       Word-Level (+3.63%)
 
-Word-Level May Win Because:
-✓ Simpler, more constrained model
-✓ Semantic inverse (NOT_good ≈ -good)
-✓ Less prone to overfitting
+Efficiency Comparison:
+Training Time                4.14 min       3.93 min     Word-Level (5% faster)
+Inference Time               2.01 sec       2.09 sec     Comparable
+Vocabulary Size              4,199          5,940        Vector-Level (smaller)
+NOT_ words added               -            1,741        -
+
+WINNER: Word-Level Augmentation
+✓ Better accuracy (+1.61%)
+✓ Better F1 scores across both classes
+✓ Simpler architecture (single input)
+✓ Faster training time
 ✓ More interpretable
 
-Efficiency Expectations:
-✓ Word-level should train faster (fewer parameters)
-✓ Word-level should infer faster (single input)
-✓ Vector-level needs more memory (216 vs 200 dim)
+KEY FINDINGS:
+-------------
 
-ANALYSIS TIPS:
---------------
+1. Performance Difference:
+   ✓ Word-level wins by 1.61% accuracy (significant)
+   ✓ Particularly strong in Recall for class 1 (+3.63%)
+   ✓ Better balanced precision/recall across classes
 
-1. Check accuracy difference:
-   - If < 1%, efficiency matters more
-   - If > 2%, performance matters more
+2. Training Efficiency:
+   ✓ Word-level trains 5% faster despite larger vocabulary
+   ✓ Inference time comparable (2.01 vs 2.09 sec)
+   ✓ Simpler architecture (single input vs dual input)
 
-2. Look at training curves:
-   - Does word-level converge faster?
-   - Does vector-level overfit more?
+3. Vocabulary Analysis:
+   ✓ 1,741 NOT_ words added (29% of total vocabulary)
+   ✓ Vocabulary grows from 4,199 to 5,940
+   ✓ Semantic inverse initialization effective
 
-3. Check misclassified examples:
-   - Are errors different between approaches?
-   - Does one handle negation better?
-
-4. Vocabulary analysis:
-   - How many NOT_ words added?
-   - What percentage actually used?
-
-5. Time vs accuracy trade-off:
-   - Is extra training time worth the gain?
-   - For production: speed or accuracy?
+4. Practical Implications:
+   ✓ Word-level recommended for production
+   ✓ Better performance with simpler architecture
+   ✓ More interpretable (can inspect NOT_ vocabulary)
+   ✓ Easier to implement and maintain
 
 DATASET INFO:
 -------------

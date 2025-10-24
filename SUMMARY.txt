@@ -1,11 +1,12 @@
 ===============================================================================
-PUF-02: FWL NEGATION SENTIMENT ANALYSIS
+PUF-02: VECTOR-LEVEL vs WORD-LEVEL NEGATION AUGMENTATION COMPARISON
 ===============================================================================
 
 OVERVIEW:
 ---------
-This implementation uses Fixed Window Length (FWL) approach for negation scope
-detection in Indonesian sentiment analysis using BiLSTM architecture.
+This implementation compares two approaches for incorporating negation information
+in sentiment analysis: Vector-Level (separate embedding) vs Word-Level (NOT_ prefix).
+Uses Fixed Window Length (FWL) for negation scope detection with BiLSTM architecture.
 
 DATASET:
 --------
@@ -29,17 +30,26 @@ Example:
   - "bagus" = in scope (2)
   - "sekali" = in scope (2)
 
-ARCHITECTURE:
--------------
-1. Word Embedding Layer (trained Word2Vec, 200 dimensions)
-2. Negation Embedding Layer (16 dimensions)
-3. Concatenation of embeddings
-4. BiLSTM Layer 1 (128 units)
-5. BiLSTM Layer 2 (128 units)
-6. Conv1D (100 filters, kernel=5)
-7. GlobalMaxPooling
-8. Dense (16 units, ReLU)
-9. Output (1 unit, Sigmoid)
+TWO APPROACHES COMPARED:
+------------------------
+
+1. VECTOR-LEVEL (Traditional):
+   - Word Embedding (200 dim) + Negation Embedding (16 dim) = 216 dim
+   - Dual input model: [word_input, negation_input]
+
+2. WORD-LEVEL (Novel):
+   - Word Embedding (200 dim, includes NOT_ words)
+   - Single input model: [word_input]
+   - NOT_word initialized as -word_embedding
+
+SHARED ARCHITECTURE:
+--------------------
+1. BiLSTM Layer 1 (128 units)
+2. BiLSTM Layer 2 (128 units)
+3. Conv1D (100 filters, kernel=5)
+4. GlobalMaxPooling
+5. Dense (16 units, ReLU)
+6. Output (1 unit, Sigmoid)
 
 HYPERPARAMETERS:
 ----------------
@@ -56,10 +66,12 @@ L2_REGULARIZATION: 1e-4
 
 FILES:
 ------
-main_bilstm_fwl.py              - Main training script
+main_bilstm_fwl.py              - Main comparison training script
 NegationHandlingBaseline.py     - FWL negation implementation
 verify_setup.py                 - Setup verification tool
 README.md                       - Full documentation
+COMPARISON_GUIDE.txt            - Detailed comparison guide
+EXPERIMENT_REPORT.md            - Full experimental report
 
 data/dataset/partitioned/
   ├── train-prdct-id.csv
@@ -68,36 +80,76 @@ data/dataset/partitioned/
 
 models/ (generated during training)
   ├── word2vec_custom.model
-  ├── fwl_negation_best.h5
-  └── fwl_negation_final.h5
+  ├── fwl_vector_level_best.h5
+  ├── fwl_vector_level_final.h5
+  ├── fwl_word_level_best.h5
+  └── fwl_word_level_final.h5
 
 results/ (generated during training)
-  ├── fwl_negation_results.pkl
-  ├── fwl_negation_misclassified.csv
-  ├── fwl_negation_history.png
+  ├── fwl_vector_level_results.pkl
+  ├── fwl_vector_level_misclassified.csv
+  ├── fwl_vector_level_history.png
+  ├── fwl_word_level_results.pkl
+  ├── fwl_word_level_misclassified.csv
+  ├── fwl_word_level_history.png
+  ├── comparison_vector_vs_word.csv
   └── logs/
+      ├── fwl_vector_level/
+      └── fwl_word_level/
 
 USAGE:
 ------
 1. Verify setup:
    python verify_setup.py
 
-2. Train model:
+2. Train both models (comparison mode):
    python main_bilstm_fwl.py
 
-EXPECTED OUTPUT:
-----------------
-- Classification report (precision, recall, F1 for each class)
-- Confusion matrix
-- Overall accuracy
-- Training/validation curves
-- Misclassified examples for error analysis
+   Default: TRAIN_BOTH = True
+   - Trains vector-level model
+   - Trains word-level model
+   - Displays comparison table
+   - Saves comparison CSV
+
+3. Train single model:
+   Edit main_bilstm_fwl.py:
+   TRAIN_BOTH = False
+   USE_WORD_LEVEL = True/False
+
+ACTUAL RESULTS:
+---------------
+Vector-Level vs Word-Level:
+- Accuracy: 88.38% vs 89.99% (Word-Level wins +1.61%)
+- F1 Score: 88.36% vs 89.99% (Word-Level wins)
+- Training Time: 4.14 min vs 3.93 min (Word-Level faster)
+- Inference Time: 2.01 sec vs 2.09 sec (comparable)
+- Vocabulary: 4,199 vs 5,940 (+1,741 NOT_ words)
+
+WINNER: Word-Level Augmentation
+- Better performance with simpler architecture
+- Faster training time
+- More interpretable (vocabulary-based)
 
 RUNTIME:
 --------
 - Word2Vec training: ~2-5 minutes
-- Model training: ~15-30 minutes (with early stopping)
-- Total: ~20-35 minutes (GPU), 40-70 minutes (CPU)
+- Vector-level model: ~4.1 minutes
+- Word-level model: ~3.9 minutes
+- Total: ~8-12 minutes (GPU), ~25-35 minutes (CPU)
+
+RESEARCH PURPOSE:
+-----------------
+Side research to investigate:
+1. Which level of feature augmentation is more effective?
+2. Trade-off between model complexity and performance
+3. Computational efficiency gains
+4. Interpretability benefits
+
+Main Findings:
+✓ Word-level augmentation outperforms vector-level
+✓ Simpler architecture does not sacrifice performance
+✓ NOT_ prefix approach is promising alternative
+✓ Training efficiency comparable between both
 
 CHANGES FROM ORIGINAL:
 ----------------------
@@ -108,10 +160,10 @@ Original (novel/rev6/main_bilstm_all.py):
 
 PUF-02:
 - Single dataset (PRDECT-ID)
-- Single negation approach (FWL only)
-- Simplified, focused implementation
-- Removed novel approach (not used)
-- Removed comparison table (only 1 model)
+- Two augmentation approaches (Vector vs Word-Level)
+- FWL negation scope detection (window=2)
+- Comparison mode implementation
+- Focused on augmentation level comparison
 
 EXTERNAL DEPENDENCIES:
 ----------------------
