@@ -39,9 +39,9 @@ Word Embedding (200 dim, includes NOT_ words) ─> BiLSTM ─> Conv1D ─> Outpu
 
 **Example:**
 ```
-Input:  "saya tidak suka makan nasi"
-FWL:    [0, 1, 2, 2, 0]
-Output: "saya tidak NOT_suka NOT_makan nasi"
+Input           :  "saya tidak suka makan nasi"
+Negation Vector :    [0, 1, 2, 2, 0]                    // vector level
+Negation Tag    : "saya tidak NOT_suka NOT_makan nasi"  // word level
 ```
 
 ## Usage
@@ -225,4 +225,5 @@ This implementation serves as a "side research" to investigate:
 - Word-level approach offers better interpretability with higher accuracy
 
 Results suggest that word-level negation handling (NOT_ prefix) is a promising alternative to traditional vector-level augmentation for sentiment analysis tasks.
+
 
